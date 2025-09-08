@@ -1,6 +1,7 @@
 --extra-index-url https://download.pytorch.org/whl/cu129
 numpy
 pandas
+kagglehub
 matplotlib
 scikit-learn
 opencv-python

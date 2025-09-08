@@ -3,7 +3,17 @@ import concurrent.futures
 import shutil
 import os
 import glob
-def custom_format_dataset(data_src):
+
+import kagglehub
+
+# Download latest version
+path = kagglehub.dataset_download("duypok/vn-celeb")
+
+
+def custom_format_dataset(data_src=path+'/VN-celeb'):
+    root_path=os.path.join('/'.join(os.path.dirname(__file__).split('/')[:-1]),'datasets')
+    shutil.move(data_src,root_path)
+    data_src=root_path+'/VN-celeb'
     if data_src[-1]=='/':
         data_src=data_src[:-1]
     def copy_and_rename(src,dst,new_name):
@@ -31,3 +41,5 @@ def custom_format_dataset(data_src):
         copy_and_rename(image_path,dest,new_image_name)
     with concurrent.futures.ThreadPoolExecutor(8) as Executer:
         Executer.map(copy2dst,image_paths)
+        
+custom_format_dataset()
