@@ -70,7 +70,7 @@ def main():
     parser.add_argument("-mn",'--model_name', type=str, default='vit', help="Name of model")
     parser.add_argument("-ims",'--img_size', type=int, default=112, help="Size of image")
     parser.add_argument("--epochs", type=int, default=400, help="Number of training epochs")
-    parser.add_argument("--lr", type=float, default=0.001, help="Learning rate")
+    parser.add_argument("--lr", type=float, default=0.0001, help="Learning rate")
     parser.add_argument("--weight_decay", type=float, default=0.1, help="Weight Decay")
     parser.add_argument("--batch_size", type=int, default=128, help="Batch size")
     parser.add_argument("--emb_dim", type=int, default=768, help="Embedding Dimension")
@@ -110,7 +110,7 @@ def main():
         total_iters=len(train_loader)*args.epochs
         lr_scheduler = PolynomialLRWarmup(
                 optimizer=optimizer,
-                warmup_iters=total_iters//10,
+                warmup_iters=0,
                 total_iters=total_iters)
         train_loop(args.epochs, model,module_partial_fc, optimizer, train_loader,
                    gallery_loader,query_loader, lr_scheduler,device=device,ckpt_path='./ckpts')
