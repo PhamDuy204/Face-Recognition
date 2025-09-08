@@ -1,0 +1,11 @@
+--extra-index-url https://download.pytorch.org/whl/cu129
+numpy
+pandas
+matplotlib
+scikit-learn
+opencv-python
+torch
+torchvision
+seaborn
+accelerate
+timm
