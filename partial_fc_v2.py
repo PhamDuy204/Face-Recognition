@@ -36,7 +36,9 @@ class PartialFC_V2(torch.nn.Module):
         num_classes: int,
         sample_rate: float = 1.0,
         fp16: bool = False,
+        skip_ce_loss=False
     ):
+        self.skip_ce_loss=skip_ce_loss
         """
         Paramenters:
         -----------
@@ -58,8 +60,9 @@ class PartialFC_V2(torch.nn.Module):
 
         self.is_updated: bool = True
         self.init_weight_update: bool = True
-        self.weight = torch.nn.Parameter(torch.normal(0, 0.01, (num_classes, embedding_size)))
-
+        self.weight = nn.Parameter(torch.FloatTensor(num_classes, embedding_size))
+        nn.init.xavier_uniform_(self.weight)
+        self.fc=nn.Linear(embedding_size,num_classes,bias=False)
         # margin_loss
         if isinstance(margin_loss, Callable):
             self.margin_softmax = margin_loss
@@ -97,6 +100,7 @@ class PartialFC_V2(torch.nn.Module):
         self,
         local_embeddings: torch.Tensor,
         local_labels: torch.Tensor,
+        epoch
     ):
         """
         Parameters:
@@ -150,117 +154,11 @@ class PartialFC_V2(torch.nn.Module):
         # labels[~index_positive] = -1
         # labels[index_positive] -= self.class_start
 
-        weight = self.weight
-
-        with torch.amp.autocast('cuda' if torch.cuda.is_available() else 'cpu',enabled=self.fp16):
-            norm_embeddings = normalize(local_embeddings)
-            norm_weight_activated = normalize(weight)
-            logits = linear(norm_embeddings, norm_weight_activated)
-        if self.fp16:
-            logits = logits.float()
-        logits = logits.clamp(-1, 1)
+        norm_embeddings = normalize(local_embeddings,dim=-1)
+        norm_weight_activated = normalize(self.weight,dim=-1)
+        logits = linear(norm_embeddings, norm_weight_activated)
 
         logits = self.margin_softmax(logits, local_labels)
 
-        max_logits, _ = torch.max(logits, dim=1, keepdim=True)
-        logits = logits - max_logits          # thay vì sub_
-        logits = torch.exp(logits)            # thay vì exp_
-        sum_logits_exp = torch.sum(logits, dim=1, keepdim=True)
-        logits = logits / sum_logits_exp      # thay vì div_
-
-        loss = (logits * F.one_hot(local_labels, logits.size(-1))).sum(-1)
-        loss = torch.log(loss.clamp_min(1e-30))  # thay vì clamp_min_ + log_
-        return -loss.mean()
-
-
-# class DistCrossEntropyFunc(torch.autograd.Function):
-#     """
-#     CrossEntropy loss is calculated in parallel, allreduce denominator into single gpu and calculate softmax.
-#     Implemented of ArcFace (https://arxiv.org/pdf/1801.07698v1.pdf):
-#     """
-
-#     @staticmethod
-#     def forward(ctx, logits: torch.Tensor, label: torch.Tensor):
-#         """ """
-#         batch_size = logits.size(0)
-#         # for numerical stability
-#         max_logits, _ = torch.max(logits, dim=1, keepdim=True)
-#         # local to global
-#         distributed.all_reduce(max_logits, distributed.ReduceOp.MAX)
-#         logits.sub_(max_logits)
-#         logits.exp_()
-#         sum_logits_exp = torch.sum(logits, dim=1, keepdim=True)
-#         # local to global
-#         distributed.all_reduce(sum_logits_exp, distributed.ReduceOp.SUM)
-#         logits.div_(sum_logits_exp)
-#         index = torch.where(label != -1)[0]
-#         # loss
-#         loss = torch.zeros(batch_size, 1, device=logits.device)
-#         loss[index] = logits[index].gather(1, label[index])
-#         distributed.all_reduce(loss, distributed.ReduceOp.SUM)
-#         ctx.save_for_backward(index, logits, label)
-#         return loss.clamp_min_(1e-30).log_().mean() * (-1)
-
-#     @staticmethod
-#     def backward(ctx, loss_gradient):
-#         """
-#         Args:
-#             loss_grad (torch.Tensor): gradient backward by last layer
-#         Returns:
-#             gradients for each input in forward function
-#             `None` gradients for one-hot label
-#         """
-#         (
-#             index,
-#             logits,
-#             label,
-#         ) = ctx.saved_tensors
-#         batch_size = logits.size(0)
-#         one_hot = torch.zeros(
-#             size=[index.size(0), logits.size(1)], device=logits.device
-#         )
-#         one_hot.scatter_(1, label[index], 1)
-#         logits[index] -= one_hot
-#         logits.div_(batch_size)
-#         return logits * loss_gradient.item(), None
-
-
-# class DistCrossEntropy(torch.nn.Module):
-#     def __init__(self):
-#         super(DistCrossEntropy, self).__init__()
-
-#     def forward(self, logit_part, label_part):
-#         return DistCrossEntropyFunc.apply(logit_part, label_part)
-
-
-# # class AllGatherFunc(torch.autograd.Function):
-# #     """AllGather op with gradient backward"""
-
-# #     @staticmethod
-# #     def forward(ctx, tensor, *gather_list):
-# #         gather_list = list(gather_list)
-# #         distributed.all_gather(gather_list, tensor)
-# #         return tuple(gather_list)
-
-# #     @staticmethod
-# #     def backward(ctx, *grads):
-# #         grad_list = list(grads)
-# #         rank = distributed.get_rank()
-# #         grad_out = grad_list[rank]
-
-# #         dist_ops = [
-# #             distributed.reduce(grad_out, rank, distributed.ReduceOp.SUM, async_op=True)
-# #             if i == rank
-# #             else distributed.reduce(
-# #                 grad_list[i], i, distributed.ReduceOp.SUM, async_op=True
-# #             )
-# #             for i in range(distributed.get_world_size())
-#         ]
-#         for _op in dist_ops:
-#             _op.wait()
-
-#         grad_out *= len(grad_list)  # cooperate with distributed loss function
-#         return (grad_out, *[None for _ in range(len(grad_list))])
-
-
-# AllGather = AllGatherFunc.apply
+        return nn.CrossEntropyLoss()(self.fc(local_embeddings),local_labels) if ((epoch <= 60) and (self.skip_ce_loss==False))\
+                else nn.CrossEntropyLoss()(logits,local_labels)

@@ -6,7 +6,7 @@ from sklearn.manifold import TSNE
 import torch
 import torch.nn.functional as F
 import os
-def visualize_tsne(model,train_loader, perplexity=30,device='cuda',save_path=
+def visualize_tsne(model,train_loader, perplexity=25,device='cuda',save_path=
                    os.path.join('/'.join(os.path.dirname(__file__).split('/')[:-1]),'visualize_training'),e=0):
     print('Saving png file...')
     os.makedirs(save_path,exist_ok=True)
@@ -23,13 +23,13 @@ def visualize_tsne(model,train_loader, perplexity=30,device='cuda',save_path=
 
             embedding= model(image)
             embeddings.extend(F.normalize(embedding.detach().cpu(),dim=-1).numpy().tolist())
-            labels.extend(label.detach().cpu().numpy().tolist())
-            if len(embeddings)>900:
+            labels.extend(label.detach().cpu().numpy().flatten().tolist())
+            if len(embeddings)>200:
                 break
     X = np.array(embeddings)
     y = np.array(labels)
     # t-SNE
-    tsne = TSNE(n_components=2, perplexity=perplexity, learning_rate=200)
+    tsne = TSNE(n_components=2, perplexity=perplexity, learning_rate='auto')
     X_tsne = tsne.fit_transform(X)
 
     # Normalize to unit circle
