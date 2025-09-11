@@ -159,6 +159,10 @@ class PartialFC_V2(torch.nn.Module):
         logits = linear(norm_embeddings, norm_weight_activated)
 
         logits = self.margin_softmax(logits, local_labels)
-
-        return nn.CrossEntropyLoss()(self.fc(local_embeddings),local_labels) if ((epoch <= 60) and (self.skip_ce_loss==False))\
-                else nn.CrossEntropyLoss()(logits,local_labels)
+        margin_loss=nn.CrossEntropyLoss()(logits,local_labels)
+        ce_loss = nn.CrossEntropyLoss()(self.fc(local_embeddings),local_labels)
+        if ((epoch <= 30) and (self.skip_ce_loss==False)):
+            loss =ce_loss+0.0*margin_loss
+        else:
+            loss =0.0*ce_loss+margin_loss
+        return loss
