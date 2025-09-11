@@ -26,9 +26,6 @@ def train_loop(epochs, model,module_partial_fc, optimizer, train_dataloader,gall
     model,module_partial_fc, optimizer, train_dataloader, lr_scheduler = accelerator.prepare(
         model,module_partial_fc, optimizer, train_dataloader, lr_scheduler
     )
-    os.makedirs(ckpt_path,exist_ok=True)
-    new_dave_model_path=ckpt_path+f'/{len(os.listdir(ckpt_path))}'
-    os.makedirs(new_dave_model_path,exist_ok=True)
     global_steps=0
     # Now you train the model
     for epoch in range(epochs):
@@ -59,15 +56,13 @@ def train_loop(epochs, model,module_partial_fc, optimizer, train_dataloader,gall
             visualize_tsne(unwarp_model,train_dataloader,device=device,e=epoch)
             eval_board=eval_model(unwarp_model,gallery_loader,query_loader,device)
             print(eval_board)
-            os.makedirs(ckpt_path,exist_ok=True)
-            os.makedirs(ckpt_path+f'/{len(os.listdir(ckpt_path))}',exist_ok=True)
-            torch.save(unwarp_model.state_dict(), os.path.join(new_dave_model_path,f'model_e_{epoch}.pt'))
+            torch.save(unwarp_model.state_dict(), os.path.join(ckpt_path,f'model_e_{epoch}.pt'))
             print('==>Save<==')
 
 def main():
     parser = argparse.ArgumentParser(description="Training script for Face Recognition")
     # Thêm các argument
-    parser.add_argument("-ds","--data_source", type=str, default='./datasets/custom_dataset', help="path to data source")
+    parser.add_argument("-p","--path", type=str, default='./datasets/custom_dataset', help="path to data source")
     parser.add_argument("-pm","--pretrained_path", type=str, default='./ckpts/0/model_e_99.pt', help="path to pretrained model")
     parser.add_argument("-nc","--num_class", type=int, default=1020, help="path to data source")
     parser.add_argument("-mn",'--model_name', type=str, default='ghost', help="Name of model")
@@ -77,9 +72,12 @@ def main():
     parser.add_argument("--weight_decay", type=float, default=0.1, help="Weight Decay")
     parser.add_argument("--batch_size", type=int, default=128, help="Batch size")
     parser.add_argument("--emb_dim", type=int, default=768, help="Embedding Dimension")
-    parser.add_argument("--cpkt_path", type=str, default='./ckpts', help="Chekcpoints Path")
+    parser.add_argument("--ckpt", type=str, default='./ckpts', help="Chekcpoints Path")
     args = parser.parse_args()
 
+    os.makedirs(args.ckpt,exist_ok=True)
+    new_dave_model_path=args.ckpt+f'/{len(os.listdir(args.ckpt))}'
+    os.makedirs(new_dave_model_path,exist_ok=True)
     device='cuda'
     train_image_transforms=T.Compose([
     T.RandomHorizontalFlip(p=0.5),
@@ -93,9 +91,9 @@ def main():
         T.Normalize((0.5,0.5,0.5),(0.5,0.5,0.5)),
     ])
     # mtcnn = MTCNN(keep_all=True,device='cpu')
-    train_set=TrainFaceRegDataset(args.data_source,train_image_transforms,'train',args.img_size,None)
-    gallery_set=TrainFaceRegDataset(args.data_source,image_transforms,'gallery',args.img_size,None)
-    query_set=TrainFaceRegDataset(args.data_source,image_transforms,'query',args.img_size,None)
+    train_set=TrainFaceRegDataset(args.path,train_image_transforms,'train',args.img_size,None)
+    gallery_set=TrainFaceRegDataset(args.path,image_transforms,'gallery',args.img_size,None)
+    query_set=TrainFaceRegDataset(args.path,image_transforms,'query',args.img_size,None)
 
     train_loader=DataLoader(train_set,args.batch_size,shuffle=True)
     gallery_loader=DataLoader(gallery_set,args.batch_size,shuffle=False)
@@ -126,7 +124,7 @@ def main():
                 warmup_iters=0,
                 total_iters=total_iters)
         train_loop(args.epochs, model,module_partial_fc, optimizer, train_loader,
-                   gallery_loader,query_loader, lr_scheduler,device=device,ckpt_path='./ckpts')
+                   gallery_loader,query_loader, lr_scheduler,device=device,ckpt_path=new_dave_model_path)
 
         
     else:

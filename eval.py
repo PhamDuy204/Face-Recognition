@@ -30,18 +30,18 @@ def eval_model(model,gallery_loader,query_loader,device='cuda'):
 
             cosine_sim = query_embs@gallery_embs.T
             pos=(gallery_labels.unsqueeze(0).expand(query_labels.size(0),-1)==query_labels.unsqueeze(-1)).sum(-1)
-            filter=torch.where(pos!=0)
-            pos=pos[filter]
+            filter_=torch.where(pos!=0)
+            pos=pos[filter_]
             eval_board={}
             for k in [1,5,10,20]:
                 _,index=cosine_sim.topk(k)
-                eval_board[f'Top-{k}-Precision']=(((gallery_labels[index]==query_labels.unsqueeze(-1)).sum(-1))[filter]/torch.where(pos<k,pos,k)).mean().item()
+                eval_board[f'Top-{k}-Precision']=(((gallery_labels[index]==query_labels.unsqueeze(-1)).sum(-1))[filter_]/torch.where(pos<k,pos,k)).mean().item()
                 torch.cuda.empty_cache()
                 pbar.update(1)
             mAP=0
             for k in range(1,cosine_sim.size(-1)+1):
                 _,index=cosine_sim.topk(k)
-                mAP+=(((gallery_labels[index]==query_labels.unsqueeze(-1)).sum(-1))[filter]/torch.where(pos<k,pos,k)).mean().item()
+                mAP+=(((gallery_labels[index]==query_labels.unsqueeze(-1)).sum(-1))[filter_]/torch.where(pos<k,pos,k)).mean().item()
                 torch.cuda.empty_cache()
                 pbar.update(1)
             eval_board[f'mAP']=mAP/cosine_sim.size(-1)

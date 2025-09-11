@@ -47,7 +47,7 @@ def process(path):
         # 4. Lưu ảnh đã căn chỉnh
         cv2.imwrite(path, cv2.cvtColor(img_rgb, cv2.COLOR_RGB2BGR))
 
-def custom_format_dataset(data_src=path+'/VN-celeb'):
+def custom_format_dataset(data_src=path):
     root_path=os.path.join('/'.join(os.path.dirname(__file__).split('/')[:-1]),'datasets')
     shutil.move(data_src,root_path)
     data_src=root_path+'/VN-celeb'
@@ -81,7 +81,7 @@ def custom_format_dataset(data_src=path+'/VN-celeb'):
     return os.path.join(root_folder,mainfolder)
         
 new_path = custom_format_dataset()
-all_image_paths = glob.glob(os.path. join(new_path,'*/.png'))
-if len(all_image_paths)!=0:
-    with concurrent.futures.ProcessPoolExecutor(max_workers=16) as E:
-        E.map(process,all_image_paths)
+# all_image_paths = glob.glob(os.path. join(new_path,'*/.png'))
+# if len(all_image_paths)!=0:
+#     with concurrent.futures.ProcessPoolExecutor(max_workers=16) as E:
+#         E.map(process,all_image_paths)
