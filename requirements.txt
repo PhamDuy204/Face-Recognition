@@ -12,4 +12,4 @@ torchmetrics
 seaborn
 accelerate
 timm
-
+faiss-cpu

@@ -6,6 +6,7 @@ import torch
 import torchvision.transforms as T
 from utils.load_model import *
 from utils.visualize_training import *
+from utils.compute_best_threshold import *
 import argparse
 from dataset import *
 from torch.utils.data import DataLoader
@@ -91,7 +92,7 @@ def main():
         T.Normalize((0.5,0.5,0.5),(0.5,0.5,0.5)),
     ])
     # mtcnn = MTCNN(keep_all=True,device='cpu')
-    train_set=TrainFaceRegDataset(args.path,train_image_transforms,'train',args.img_size,None)
+    train_set=TrainFaceRegDataset(args.path,train_image_transforms,'*',args.img_size,None)
     gallery_set=TrainFaceRegDataset(args.path,image_transforms,'gallery',args.img_size,None)
     query_set=TrainFaceRegDataset(args.path,image_transforms,'query',args.img_size,None)
 
@@ -126,7 +127,8 @@ def main():
         train_loop(args.epochs, model,module_partial_fc, optimizer, train_loader,
                    gallery_loader,query_loader, lr_scheduler,device=device,ckpt_path=new_dave_model_path)
 
-        
+        best_threshold=compute_best_threshold(model,gallery_loader,query_loader,device='cuda')
+        print('Best threshold for recoggnition: ',best_threshold)
     else:
         raise ValueError()
     # Parse arguments

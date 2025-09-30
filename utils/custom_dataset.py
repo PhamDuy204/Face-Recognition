@@ -13,39 +13,42 @@ import cv2
 from facenet_pytorch import MTCNN
 from PIL import Image
 import concurrent.futures
-# Hàm alignment
+
+
 def align_face(img, src_landmarks, dst_landmarks, size=(112, 112)):
-    # Tính ma trận affine từ landmark thực tế sang landmark chuẩn
+ 
     M, _ = cv2.estimateAffinePartial2D(np.array(src_landmarks), dst_landmarks)
     aligned = cv2.warpAffine(img, M, size)
     return aligned
 
 
-# Template landmark chuẩn cho ArcFace (112x112)
-
 
 def process(path):
-    img = cv2.resize(cv2.imread(path),(112,112),interpolation=cv2.INTER_AREA)
+    
+    img = cv2.resize(cv2.imread(path),(112,112),interpolation=cv2.INTER_LANCZOS4)
     img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     arcface_template = np.array([
-        [38.2946, 51.6963],   # mắt trái
-        [73.5318, 51.5014],   # mắt phải
-        [56.0252, 71.7366],   # mũi
-        [41.5493, 92.3655],   # miệng trái
-        [70.7299, 92.2041]    # miệng phải
+        [38.2946, 51.6963],  
+        [73.5318, 51.5014],   
+        [56.0252, 71.7366],   
+        [41.5493, 92.3655],  
+        [70.7299, 92.2041]   
     ], dtype=np.float32)
-    # 2. Dùng MTCNN detect
-    mtcnn = MTCNN(keep_all=True)
-    boxes, probs, landmarks = mtcnn.detect(Image.fromarray(img_rgb), landmarks=True)
+
+    mtcnn = MTCNN(image_size=112,keep_all=True)
+    boxes, _= mtcnn.detect(Image.fromarray(img_rgb), landmarks=False)
+    if boxes is not None:
+        x, y, w, h = boxes[0].astype(int)
+        x1, y1 = max(1, x-1), max(1, y-1)
+        x2, y2 = min(img_rgb.shape[1]-1, x + w-1), min(img_rgb.shape[0]-1, y + h-1)
+        img_rgb = img_rgb[y1:y2,x1:x2,:]
+    img_rgb=cv2.resize(img_rgb,(112,112),interpolation=cv2.INTER_LANCZOS4)
+    _, _,landmarks= mtcnn.detect(Image.fromarray(img_rgb), landmarks=True)
     if landmarks is not None:
-        # for lm in landmarks:   # lm có shape (5,2): mắt trái, mắt phải, mũi, miệng trái, miệng phải
         src_landmarks = np.array(landmarks[0], dtype=np.float32)
 
-        # 3. Alignment
         img_rgb = align_face(img_rgb, src_landmarks, arcface_template, size=(112,112))
-
-        # 4. Lưu ảnh đã căn chỉnh
-        cv2.imwrite(path, cv2.cvtColor(img_rgb, cv2.COLOR_RGB2BGR))
+    cv2.imwrite(path, cv2.cvtColor(img_rgb, cv2.COLOR_RGB2BGR))
 
 def custom_format_dataset(data_src=path):
     root_path=os.path.join('/'.join(os.path.dirname(__file__).split('/')[:-1]),'datasets')
@@ -81,7 +84,7 @@ def custom_format_dataset(data_src=path):
     return os.path.join(root_folder,mainfolder)
         
 new_path = custom_format_dataset()
-# all_image_paths = glob.glob(os.path. join(new_path,'*/.png'))
-# if len(all_image_paths)!=0:
-#     with concurrent.futures.ProcessPoolExecutor(max_workers=16) as E:
-#         E.map(process,all_image_paths)
+all_image_paths = glob.glob(os.path.join(new_path,'*/*.png'))
+if len(all_image_paths)!=0:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=16) as E:
+        E.map(process,all_image_paths)
