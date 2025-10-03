@@ -18,7 +18,7 @@ def compute_embedding(img,model,detector,device='cpu'):
          raise ValueError("img or img path doesn't exist")
     else:
         img = cv2.cvtColor(
-            cv2.resize(img,(112,112),interpolation=cv2.INTER_AREA),
+            cv2.resize(img,(256,256),interpolation=cv2.INTER_AREA),
             cv2.COLOR_BGR2RGB)
         arcface_template = np.array([
         [38.2946, 51.6963],  
