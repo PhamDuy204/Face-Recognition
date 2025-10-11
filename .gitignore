@@ -36,7 +36,6 @@ env/
 *.manifest
 *.spec
 *.png
-*.pt
 *.pth
 
 # Unit test / coverage reports
