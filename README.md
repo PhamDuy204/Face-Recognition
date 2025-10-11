@@ -1,7 +1,7 @@
 # 📌[PYTORCH] Vietnamese Face Recognition System
 ## 📖 Introduction
 
-This project implements a Face Recognition System using PyTorch, specifically trained on a dataset of Vietnamese faces. While general face recognition models are often trained on large, diverse datasets, they may not always perform well on specific demographics. To address this issue, our system adapts a pretrained model and fine-tunes it with Vietnamese facial data to improve recognition accuracy in real-world local scenarios.
+This project implements a Face Recognition System using PyTorch, specifically trained on a dataset of Vietnamese faces. While general face recognition models are often trained on large, diverse datasets, they may not always perform well on specific demographics. To address this issue,we will train new model from scrath with Vietnamese facial data to improve recognition accuracy in real-world local scenarios.
 
 The main objectives of this project are:
 
@@ -56,3 +56,44 @@ python3 ./utils/custom_dataset.py
 ``` shell
 python ./utils/custom_dataset.py
 ```
+
+### 3 Train Model
+* Linux
+
+```bash
+python3 train.py --path 'path/to/custom_datset' --num_class 'number of different faces' --model_name 'ghost or mobile_fiaccenet' --img_size 'size of image' -emb_dim 'hidden embedding dim of model'
+```
+* Window
+
+``` shell
+python train.py --path 'path/to/custom_datset' --num_class 'number of different faces' --model_name 'ghost or mobile_fiaccenet' --img_size 'size of image' -emb_dim 'hidden embedding dim of model'
+```
+
+## 🧾 Demo
+```bash
+streamlit run demo.py -- --model_name 'ghost or mobile_facenet' --ckpt_model 'path/to/checkpoints' --cleardb 'True or False (to clear temporary database)' --emb_dim 'hidden embedding dim of model'
+```
+### UI
+<p align="center">
+    <figure>
+        <figcaption>Register</figcaption>
+        <img src="./assets/register_ui.jpg" alt="Ảnh 1" width="45%"/>
+        <img src="./assets/register_ui_with_image.jpg" alt="Ảnh 2" width="45%"/>
+    </figure>
+</p>
+<p align="center">
+    <figure>
+        <figcaption>Login</figcaption>
+        <img src="./assets/login_ui.jpg" alt="Ảnh 1" width="30%"/>
+        <img src="./assets/true_image.jpg" alt="Ảnh 2" width="30%"/>
+        <img src="./assets/false_image.jpg" alt="Ảnh 2" width="30%"/>
+    </figure>
+</p>
+
+## 🖼️ Visualize Training Results
+
+| Trained | Default |
+|:--------:|:--------:|
+| <img src="./assets/trained_model.jpg" width="250"/> | <img src="./assets/raw_model.jpg" width="250"/> |
+
+

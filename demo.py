@@ -62,6 +62,7 @@ if __name__ =='__main__':
         if st.button("Register"):
             if user_id and uploaded_file:
                 image = cv2.cvtColor(np.array(Image.open(uploaded_file).convert("RGB")),cv2.COLOR_RGB2BGR)
+                # image=((detector(image).squeeze().detach().cpu().numpy().transpose(1,2,0)/2+0.5).clip(0,1) * 255).astype(np.uint8)
                 img_emb=compute_embedding(image,model,detector).flatten()
 
 
@@ -100,8 +101,9 @@ if __name__ =='__main__':
         uploaded_file = st.file_uploader("Upload face image for login", type=["jpg", "png", "jpeg"], key="login")
         if st.button("Login"):
             if uploaded_file:
+                cols_login = st.columns(2)  # tạo số cột = số user
                 image = Image.open(uploaded_file).convert("RGB")
-                st.image(image, caption="Uploaded Face", use_container_width=True)
+                cols_login[0].image(image, caption="Uploaded Face", width='stretch')
 
                 image = cv2.cvtColor(np.array(image),cv2.COLOR_RGB2BGR)
                 img_emb=compute_embedding(image,model,detector).flatten()
@@ -111,12 +113,12 @@ if __name__ =='__main__':
                 similarity=D[0][0]
                 user_id_=id_db[I[0][0]]
                 if similarity < 0.2:
-                    # st.text(f'score : {similarity}')
+                    st.text(f'score : {similarity}')
                     st.error('unidentified')
                 else:
-                    # st.text(f'score : {similarity}')
+                    st.text(f'score : {similarity}')
                     st.success(f"Your id in db is : {user_id_}")
                     st.subheader("Your raw image")
-                    st.image(Image.open(io.BytesIO(raw_imgs.tolist()[I[0][0]])))
+                    cols_login[1].image(Image.open(io.BytesIO(raw_imgs.tolist()[I[0][0]])),caption='Image in database', width='stretch')
             else:
                 st.warning("Please upload an image.")
