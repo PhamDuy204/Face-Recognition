@@ -74,21 +74,20 @@ python train.py --path 'path/to/custom_datset' --num_class 'number of different 
 streamlit run demo.py -- --model_name 'ghost or mobile_facenet' --ckpt_model 'path/to/checkpoints' --cleardb 'True or False (to clear temporary database)' --emb_dim 'hidden embedding dim of model'
 ```
 ### UI
-<p align="center">
-    <figure>
-        <figcaption>Register</figcaption>
-        <img src="./assets/register_ui.jpg" alt="Ảnh 1" width="45%"/>
-        <img src="./assets/register_ui_with_image.jpg" alt="Ảnh 2" width="45%"/>
-    </figure>
-</p>
-<p align="center">
-    <figure>
-        <figcaption>Login</figcaption>
-        <img src="./assets/login_ui.jpg" alt="Ảnh 1" width="30%"/>
-        <img src="./assets/true_image.jpg" alt="Ảnh 2" width="30%"/>
-        <img src="./assets/false_image.jpg" alt="Ảnh 2" width="30%"/>
-    </figure>
-</p>
+### 🧾 Register
+
+| Register | Register with Image |
+|:--:|:--:|
+| <img src="./assets/register_ui.jpg" width="45%"> | <img src="./assets/register_ui_with_image.jpg" width="45%"> |
+
+---
+
+### 🔐 Login
+
+| Login UI | True Image | False Image |
+|:--:|:--:|:--:|
+| <img src="./assets/login_ui.jpg" width="30%"> | <img src="./assets/true_image.jpg" width="30%"> | <img src="./assets/false_image.jpg" width="30%"> |
+
 
 ## 🖼️ Visualize Training Results
 
